@@ -22,22 +22,33 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
     const supabase = createClient();
 
     const fetchUser = async () => {
-      const {
-        data: { user: authUser },
-      } = await supabase.auth.getUser();
+      try {
+        const {
+          data: { user: authUser },
+        } = await supabase.auth.getUser();
 
-      if (authUser) {
-        const { data } = await supabase
-          .from("users")
-          .select("*")
-          .eq("id", authUser.id)
-          .single();
+        if (authUser) {
+          const { data, error } = await supabase
+            .from("users")
+            .select("*")
+            .eq("id", authUser.id)
+            .maybeSingle();
 
-        setUser(data as User);
-      } else {
+          if (error) {
+            console.error("Error fetching user profile:", error);
+            setUser(null);
+          } else {
+            setUser(data as User | null);
+          }
+        } else {
+          setUser(null);
+        }
+      } catch (err) {
+        console.error("Auth initialization error:", err);
         setUser(null);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     fetchUser();
@@ -45,17 +56,22 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        const { data } = await supabase
-          .from("users")
-          .select("*")
-          .eq("id", session.user.id)
-          .single();
-        setUser(data as User);
-      } else {
-        setUser(null);
+      try {
+        if (session?.user) {
+          const { data } = await supabase
+            .from("users")
+            .select("*")
+            .eq("id", session.user.id)
+            .maybeSingle();
+          setUser(data as User | null);
+        } else {
+          setUser(null);
+        }
+      } catch (err) {
+        console.error("Auth state change error:", err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
