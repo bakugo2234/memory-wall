@@ -29,7 +29,15 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { pathname } = request.nextUrl;
+  const { pathname, searchParams } = request.nextUrl;
+
+  // If there's an OAuth code in the URL, redirect to the auth callback route
+  // This handles cases where Supabase redirects to the default Site URL instead of the callback URL
+  if (searchParams.has("code") && !pathname.startsWith("/api/auth/callback")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/api/auth/callback";
+    return NextResponse.redirect(url);
+  }
 
   // Redirect unauthenticated users to login
   if (!user && pathname !== "/login" && !pathname.startsWith("/api")) {
