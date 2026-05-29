@@ -73,11 +73,12 @@ export function PostGrid() {
   const allPosts = data?.pages.flatMap((p) => p.posts) || [];
 
   if (isLoading) {
+    const skeletonHeights = [240, 310, 280, 350, 220, 290, 330, 260];
     return (
       <div className="masonry">
         {[...Array(8)].map((_, i) => (
           <div key={i} className="masonry-item">
-            <div className="skeleton rounded-2xl" style={{ height: `${200 + Math.random() * 200}px` }} />
+            <div className="skeleton rounded-2xl" style={{ height: `${skeletonHeights[i]}px` }} />
           </div>
         ))}
       </div>
